@@ -1,0 +1,214 @@
+# @packages/coingecko-client - Документация для ИИ
+
+## Краткое описание
+
+CoinGecko API клиент для NestJS с поддержкой TypeScript и полной типобезопасностью. Предоставляет готовый NestJS глобальный модуль для простой интеграции и работы с CoinGecko API.
+
+## Архитектура
+
+Пакет предоставляет NestJS глобальный модуль `CoinGeckoModule` для работы с CoinGecko API через HTTP запросы.
+
+## Структура пакета
+
+```
+src/
+├── main/                                 # NestJS модуль
+│   ├── coingecko-client.module.ts        # CoinGeckoModule - глобальный модуль
+│   └── coingecko-client.service.ts       # CoinGeckoService - основной сервис
+│
+├── core/                                 # Низкоуровневый HTTP клиент
+│   └── core-client.service.ts            # CoreClientService - базовый HTTP клиент
+│
+├── types/                                # TypeScript типы и интерфейсы
+│   ├── module-options.interface.ts       # Опции модуля
+│   └── api-types.ts                      # Типы для API (CryptoPrice, CryptoDetails, etc.)
+│
+├── utils/                                # Утилиты
+│   ├── injection-keys.ts                 # Ключи для DI
+│   └── transform.utils.ts                # Трансформация snake_case → camelCase
+│
+├── errors/                               # Кастомные ошибки
+│   └── coingecko.error.ts                # CoingeckoError
+│
+└── index.ts                              # Точка входа - экспорты всех публичных API
+```
+
+## Основные компоненты
+
+### CoinGeckoModule
+
+NestJS глобальный модуль для регистрации CoinGeckoService. Поддерживает асинхронную регистрацию:
+- `forRootAsync(options)` - асинхронная конфигурация через useFactory
+- Экспортирует `CoinGeckoService` глобально
+
+### CoinGeckoService
+
+Сервис для работы с CoinGecko API:
+- Конструктор принимает `CoinGeckoModuleOptions` через DI
+- `getMarketData(params)` - получение рыночных данных криптовалют с фильтрацией и сортировкой
+- `getSimplePrices(ids, include24hChange)` - получение простых цен криптовалют по их ID
+- `getCoinDetails(coinId)` - получение детальной информации о криптовалюте включая метрики, профиль и данные разработчиков
+- `getHistoricalData(coinId, days, interval)` - получение исторических данных о ценах, рыночной капитализации и объеме
+- `searchCoins(query)` - выполнение поиска криптовалют по запросу
+- `getTrendingCoins()` - получение списка трендовых криптовалют за последние 24 часа
+- `getGlobalMarketData()` - получение глобальных метрик криптовалютного рынка
+
+### CoinGeckoModuleOptions
+
+Конфигурация для настройки клиента:
+- `apiKey` - API ключ CoinGecko (опционально, для Pro API)
+- `baseUrl` - базовый URL API (опционально, по умолчанию: https://api.coingecko.com/api/v3)
+- `timeout` - таймаут запросов в миллисекундах (опционально, по умолчанию: 30000)
+
+### Типы данных
+
+Пакет экспортирует следующие типы:
+- `CryptoPrice` - криптовалютный актив (camelCase)
+- `CryptoPriceRaw` - сырые данные от API (snake_case)
+- `MarketDataParams` - параметры для запроса рыночных данных
+- `PriceData` - простые цены криптовалют
+- `CryptoDetails` - детальная информация о криптовалюте
+- `CryptoHistoricalData` - исторические данные о ценах и объемах
+- `CryptoSearchResult` - результат поиска криптовалют
+- `TrendingCrypto` - трендовая криптовалюта
+- `CryptoMarketData` - глобальные метрики рынка
+
+## Использование
+
+### Создание конфигурации в сервисе
+
+Создайте файл конфигурации в вашем сервисе (например, `services/chat-service/src/configs/coingecko.config.ts`):
+
+```typescript
+// coingecko.config.ts
+import { registerAs } from "@nestjs/config";
+import type { CoinGeckoModuleOptions } from "@packages/coingecko-client";
+import { EnvVariable } from "src/types/enums";
+
+export type CoinGeckoConfiguration = CoinGeckoModuleOptions;
+
+const coingeckoConfig = registerAs<CoinGeckoConfiguration>(
+  "coingecko",
+  (): CoinGeckoConfiguration => {
+    return {
+      apiKey: process.env[EnvVariable.COINGECKO_API_KEY], // Опционально для Pro API
+      baseUrl: process.env[EnvVariable.COINGECKO_BASE_URL] || "https://api.coingecko.com/api/v3",
+      timeout: Number(process.env[EnvVariable.COINGECKO_TIMEOUT]) || 30000,
+    };
+  },
+);
+
+export default coingeckoConfig;
+```
+
+### Регистрация модуля
+
+```typescript
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CoinGeckoModule } from '@packages/coingecko-client';
+import coingeckoConfig from 'src/configs/coingecko.config';
+import type { CoinGeckoConfiguration } from 'src/configs/coingecko.config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [coingeckoConfig],
+    }),
+    CoinGeckoModule.forRootAsync<[CoinGeckoConfiguration]>({
+      useFactory: (config: CoinGeckoConfiguration) => config,
+      inject: [coingeckoConfig.KEY],
+      imports: [ConfigModule],
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Использование сервиса
+
+```typescript
+// crypto-data.service.ts
+import { Injectable } from '@nestjs/common';
+import { CoinGeckoService } from '@packages/coingecko-client';
+import type { CryptoPrice, CryptoDetails, CryptoHistoricalData, CryptoSearchResult, TrendingCrypto, CryptoMarketData } from '@packages/coingecko-client';
+
+@Injectable()
+export class CryptoDataService {
+  constructor(private readonly coingecko: CoinGeckoService) {}
+
+  async getTopCryptoAssets(limit: number = 100): Promise<CryptoPrice[]> {
+    return await this.coingecko.getMarketData({ perPage: limit });
+  }
+
+  async getCryptoPrices(coinIds: string[], include24hChange: boolean = false) {
+    return await this.coingecko.getSimplePrices(coinIds, include24hChange);
+  }
+
+  async getCryptoDetails(coinId: string): Promise<CryptoDetails> {
+    return await this.coingecko.getCoinDetails(coinId);
+  }
+
+  async getHistoricalPrices(coinId: string, days: number = 7): Promise<CryptoHistoricalData> {
+    return await this.coingecko.getHistoricalData(coinId, days, 'daily');
+  }
+
+  async searchCryptoCoins(query: string): Promise<CryptoSearchResult[]> {
+    return await this.coingecko.searchCoins(query);
+  }
+
+  async getTrendingCryptos(): Promise<TrendingCrypto[]> {
+    return await this.coingecko.getTrendingCoins();
+  }
+
+  async getGlobalMarketMetrics(): Promise<CryptoMarketData> {
+    return await this.coingecko.getGlobalMarketData();
+  }
+}
+```
+
+## Переменные окружения
+
+- `COINGECKO_API_KEY` - API ключ CoinGecko (опционально, для Pro API)
+- `COINGECKO_BASE_URL` - Базовый URL API (опционально, по умолчанию: `https://api.coingecko.com/api/v3`)
+- `COINGECKO_TIMEOUT` - Таймаут запросов в миллисекундах (опционально, по умолчанию: `30000`)
+
+## Экспорты (index.ts)
+
+Пакет экспортирует:
+
+Модули:
+- `CoinGeckoModule` (default export)
+
+Сервисы:
+- `CoinGeckoService` (default export)
+
+Типы:
+- `CoinGeckoModuleOptions` / `CoinGeckoModuleAsyncOptions`
+- `CryptoPrice`, `CryptoPriceRaw`, `MarketDataParams`, `PriceData`
+- `CryptoDetails`, `CryptoHistoricalData`, `CryptoSearchResult`
+- `TrendingCrypto`, `CryptoMarketData`
+
+Ошибки:
+- `CoingeckoError` (default export)
+
+## Важные замечания
+
+1. **Конфигурация**: Конфигурация должна создаваться в сервисе, который использует пакет, а не в самом пакете
+2. **Трансформация данных**: Метод `getMarketData()` автоматически преобразует данные из snake_case в camelCase
+3. **API ключ**: Опционально, используется для Pro API (увеличивает лимиты запросов)
+4. **Таймауты**: По умолчанию 30 секунд, можно переопределить в конфигурации
+5. **Обработка ошибок**: Все ошибки логируются через `LoggerService` из `@makebelieve21213-packages/logger`
+
+## Тестирование
+
+Пакет имеет 100% покрытие тестами. Все компоненты протестированы через Jest.
+
+## Зависимости
+
+- `@nestjs/common` - NestJS core
+- `@nestjs/config` - NestJS config (опционально, для async конфигурации)
+- `@makebelieve21213-packages/logger` - Логирование
+- `reflect-metadata` - TypeScript decorators
