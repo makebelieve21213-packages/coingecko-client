@@ -45,7 +45,7 @@ NestJS глобальный модуль для регистрации CoinGecko
 
 Сервис для работы с CoinGecko API:
 - Конструктор принимает `CoinGeckoModuleOptions` через DI
-- `getMarketData(params)` - получение рыночных данных криптовалют с фильтрацией и сортировкой
+- `getMarketData(params)` - получение рыночных данных криптовалют с фильтрацией и сортировкой. Поддерживает параметры `sparkline` (данные sparkline за 7 дней) и `priceChangePercentage` (периоды изменения цен, например "1h,24h,7d")
 - `getSimplePrices(ids, include24hChange)` - получение простых цен криптовалют по их ID
 - `getCoinDetails(coinId)` - получение детальной информации о криптовалюте включая метрики, профиль и данные разработчиков
 - `getHistoricalData(coinId, days, interval)` - получение исторических данных о ценах, рыночной капитализации и объеме
@@ -63,9 +63,9 @@ NestJS глобальный модуль для регистрации CoinGecko
 ### Типы данных
 
 Пакет экспортирует следующие типы:
-- `CryptoPrice` - криптовалютный актив (camelCase)
-- `CryptoPriceRaw` - сырые данные от API (snake_case)
-- `MarketDataParams` - параметры для запроса рыночных данных
+- `CryptoPrice` - криптовалютный актив (camelCase). Включает поля: `sparklineIn7d?: { price: number[] }`, `priceChangePercentage1hInCurrency?: number`, `priceChangePercentage7dInCurrency?: number` (доступны при использовании соответствующих параметров в `getMarketData`)
+- `CryptoPriceRaw` - сырые данные от API (snake_case). Включает поля: `sparkline_in_7d?: { price: number[] }`, `price_change_percentage_1h_in_currency?: number`, `price_change_percentage_7d_in_currency?: number`
+- `MarketDataParams` - параметры для запроса рыночных данных. Включает опциональные параметры: `sparkline?: boolean`, `priceChangePercentage?: string`
 - `PriceData` - простые цены криптовалют
 - `CryptoDetails` - детальная информация о криптовалюте
 - `CryptoHistoricalData` - исторические данные о ценах и объемах
@@ -198,9 +198,10 @@ export class CryptoDataService {
 
 1. **Конфигурация**: Конфигурация должна создаваться в сервисе, который использует пакет, а не в самом пакете
 2. **Трансформация данных**: Метод `getMarketData()` автоматически преобразует данные из snake_case в camelCase
-3. **API ключ**: Опционально, используется для Pro API (увеличивает лимиты запросов)
-4. **Таймауты**: По умолчанию 30 секунд, можно переопределить в конфигурации
-5. **Обработка ошибок**: Все ошибки логируются через `LoggerService` из `@makebelieve21213-packages/logger`
+3. **Sparkline и изменения цен**: Для получения данных sparkline за 7 дней и изменений цен за разные периоды используйте параметры `sparkline: true` и `priceChangePercentage: "1h,24h,7d"` в методе `getMarketData()`. Эти данные будут доступны в полях `sparklineIn7d`, `priceChangePercentage1hInCurrency` и `priceChangePercentage7dInCurrency` объекта `CryptoPrice`
+4. **API ключ**: Опционально, используется для Pro API (увеличивает лимиты запросов)
+5. **Таймауты**: По умолчанию 30 секунд, можно переопределить в конфигурации
+6. **Обработка ошибок**: Все ошибки логируются через `LoggerService` из `@makebelieve21213-packages/logger`
 
 ## Тестирование
 

@@ -16,6 +16,8 @@ export default function transformRawPrice(raw: CryptoPriceRaw): CryptoPrice {
 		low24h: raw.low_24h,
 		priceChange24h: raw.price_change_24h,
 		priceChangePercentage24h: raw.price_change_percentage_24h,
+		priceChangePercentage1hInCurrency: raw.price_change_percentage_1h_in_currency,
+		priceChangePercentage7dInCurrency: raw.price_change_percentage_7d_in_currency,
 		marketCapChange24h: raw.market_cap_change_24h,
 		marketCapChangePercentage24h: raw.market_cap_change_percentage_24h,
 		circulatingSupply: raw.circulating_supply,
@@ -27,6 +29,7 @@ export default function transformRawPrice(raw: CryptoPriceRaw): CryptoPrice {
 		atl: raw.atl,
 		atlChangePercentage: raw.atl_change_percentage,
 		atlDate: raw.atl_date,
+		sparklineIn7d: raw.sparkline_in_7d,
 		lastUpdated: raw.last_updated,
 	};
 }

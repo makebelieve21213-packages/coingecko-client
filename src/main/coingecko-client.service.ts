@@ -39,7 +39,7 @@ export default class CoinGeckoService extends CoreClientService {
 			order: params.order || "market_cap_desc",
 			per_page: params.perPage || 100,
 			page: params.page || 1,
-			sparkline: params.sparkline || false,
+			sparkline: params.sparkline !== undefined ? params.sparkline : false,
 			price_change_percentage: params.priceChangePercentage,
 		});
 

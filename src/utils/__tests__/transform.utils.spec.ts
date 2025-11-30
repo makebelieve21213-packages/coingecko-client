@@ -325,4 +325,113 @@ describe("transformRawPrice", () => {
 		expect(result.atlDate).toBe("2019-01-01");
 		expect(result.lastUpdated).toBe("2024-12-31T23:59:59Z");
 	});
+
+	it("должен преобразовать новые поля sparkline_in_7d, price_change_percentage_1h_in_currency, price_change_percentage_7d_in_currency", () => {
+		const raw: CryptoPriceRaw = {
+			id: "bitcoin",
+			symbol: "btc",
+			name: "Bitcoin",
+			image: "https://example.com/btc.png",
+			current_price: 50000,
+			market_cap: 1000000000,
+			market_cap_rank: 1,
+			total_volume: 50000000,
+			high_24h: 51000,
+			low_24h: 49000,
+			price_change_24h: 1000,
+			price_change_percentage_24h: 2,
+			price_change_percentage_1h_in_currency: 0.5,
+			price_change_percentage_7d_in_currency: 5.2,
+			market_cap_change_24h: 20000000,
+			market_cap_change_percentage_24h: 2,
+			circulating_supply: 20000000,
+			ath: 60000,
+			ath_change_percentage: -16.67,
+			ath_date: "2021-11-10",
+			atl: 1000,
+			atl_change_percentage: 4900,
+			atl_date: "2013-01-01",
+			sparkline_in_7d: {
+				price: [48000, 49000, 49500, 50000, 50500, 51000, 50000],
+			},
+			last_updated: "2024-01-01",
+		};
+
+		const result = transformRawPrice(raw);
+
+		expect(result.priceChangePercentage1hInCurrency).toBe(0.5);
+		expect(result.priceChangePercentage7dInCurrency).toBe(5.2);
+		expect(result.sparklineIn7d).toEqual({
+			price: [48000, 49000, 49500, 50000, 50500, 51000, 50000],
+		});
+	});
+
+	it("должен обработать данные без новых опциональных полей", () => {
+		const raw: CryptoPriceRaw = {
+			id: "bitcoin",
+			symbol: "btc",
+			name: "Bitcoin",
+			image: "https://example.com/btc.png",
+			current_price: 50000,
+			market_cap: 1000000000,
+			market_cap_rank: 1,
+			total_volume: 50000000,
+			high_24h: 51000,
+			low_24h: 49000,
+			price_change_24h: 1000,
+			price_change_percentage_24h: 2,
+			market_cap_change_24h: 20000000,
+			market_cap_change_percentage_24h: 2,
+			circulating_supply: 20000000,
+			ath: 60000,
+			ath_change_percentage: -16.67,
+			ath_date: "2021-11-10",
+			atl: 1000,
+			atl_change_percentage: 4900,
+			atl_date: "2013-01-01",
+			last_updated: "2024-01-01",
+		};
+
+		const result = transformRawPrice(raw);
+
+		expect(result.priceChangePercentage1hInCurrency).toBeUndefined();
+		expect(result.priceChangePercentage7dInCurrency).toBeUndefined();
+		expect(result.sparklineIn7d).toBeUndefined();
+	});
+
+	it("должен обработать данные с undefined новыми опциональными полями", () => {
+		const raw: CryptoPriceRaw = {
+			id: "bitcoin",
+			symbol: "btc",
+			name: "Bitcoin",
+			image: "https://example.com/btc.png",
+			current_price: 50000,
+			market_cap: 1000000000,
+			market_cap_rank: 1,
+			total_volume: 50000000,
+			high_24h: 51000,
+			low_24h: 49000,
+			price_change_24h: 1000,
+			price_change_percentage_24h: 2,
+			price_change_percentage_1h_in_currency: undefined,
+			price_change_percentage_7d_in_currency: undefined,
+			market_cap_change_24h: 20000000,
+			market_cap_change_percentage_24h: 2,
+			circulating_supply: 20000000,
+			ath: 60000,
+			ath_change_percentage: -16.67,
+			ath_date: "2021-11-10",
+			atl: 1000,
+			atl_change_percentage: 4900,
+			atl_date: "2013-01-01",
+			sparkline_in_7d: undefined,
+			last_updated: "2024-01-01",
+		};
+
+		const result = transformRawPrice(raw);
+
+		expect(result.priceChangePercentage1hInCurrency).toBeUndefined();
+		expect(result.priceChangePercentage7dInCurrency).toBeUndefined();
+		expect(result.sparklineIn7d).toBeUndefined();
+	});
 });

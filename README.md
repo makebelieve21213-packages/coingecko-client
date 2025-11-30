@@ -178,7 +178,15 @@ CoinGeckoModule.forRootAsync<[CoinGeckoConfiguration]>({
 async getMarketData(params?: MarketDataParams): Promise<CryptoPrice[]>
 ```
 
-**Параметры:** `vsCurrency`, `ids`, `category`, `order`, `perPage`, `page`, `sparkline`, `priceChangePercentage`
+**Параметры:**
+- `vsCurrency?: string` - валюта для отображения цен (по умолчанию: "usd")
+- `ids?: string` - фильтр по ID криптовалют (через запятую)
+- `category?: string` - фильтр по категории
+- `order?: string` - порядок сортировки (по умолчанию: "market_cap_desc")
+- `perPage?: number` - количество результатов на странице (по умолчанию: 100)
+- `page?: number` - номер страницы (по умолчанию: 1)
+- `sparkline?: boolean` - включить данные sparkline за 7 дней (по умолчанию: false)
+- `priceChangePercentage?: string` - периоды для изменения цен (например: "1h,24h,7d")
 
 #### `getSimplePrices(ids, include24hChange?)`
 
@@ -237,6 +245,28 @@ const topAssets = await this.coingecko.getMarketData({ perPage: 50 });
 topAssets.forEach(asset => {
   console.log(`${asset.name}: $${asset.currentPrice}`);
   console.log(`Market Cap: $${asset.marketCap}`);
+});
+```
+
+### Получение рыночных данных с sparkline и изменениями цен
+
+```typescript
+const assets = await this.coingecko.getMarketData({
+  vsCurrency: "usd",
+  order: "market_cap_desc",
+  perPage: 100,
+  sparkline: true,
+  priceChangePercentage: "1h,24h,7d",
+});
+
+assets.forEach(asset => {
+  console.log(`${asset.name}: $${asset.currentPrice}`);
+  console.log(`24h Change: ${asset.priceChangePercentage24h}%`);
+  console.log(`1h Change: ${asset.priceChangePercentage1hInCurrency}%`);
+  console.log(`7d Change: ${asset.priceChangePercentage7dInCurrency}%`);
+  if (asset.sparklineIn7d) {
+    console.log(`Sparkline data points: ${asset.sparklineIn7d.price.length}`);
+  }
 });
 ```
 

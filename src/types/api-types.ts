@@ -14,6 +14,8 @@ export interface CryptoPriceRaw {
 	low_24h: number;
 	price_change_24h: number;
 	price_change_percentage_24h: number;
+	price_change_percentage_1h_in_currency?: number;
+	price_change_percentage_7d_in_currency?: number;
 	market_cap_change_24h: number;
 	market_cap_change_percentage_24h: number;
 	circulating_supply: number;
@@ -25,6 +27,7 @@ export interface CryptoPriceRaw {
 	atl: number;
 	atl_change_percentage: number;
 	atl_date: string;
+	sparkline_in_7d?: { price: number[] };
 	last_updated: string;
 }
 
@@ -53,6 +56,8 @@ export interface CryptoPrice {
 	low24h: number;
 	priceChange24h: number;
 	priceChangePercentage24h: number;
+	priceChangePercentage1hInCurrency?: number;
+	priceChangePercentage7dInCurrency?: number;
 	marketCapChange24h: number;
 	marketCapChangePercentage24h: number;
 	circulatingSupply: number;
@@ -64,6 +69,7 @@ export interface CryptoPrice {
 	atl: number;
 	atlChangePercentage: number;
 	atlDate: string;
+	sparklineIn7d?: { price: number[] };
 	lastUpdated: string;
 }
 

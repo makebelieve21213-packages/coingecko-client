@@ -814,6 +814,228 @@ describe("CoinGeckoService", () => {
 
 			expect(result).toEqual(expectedData);
 		});
+
+		it("должен получить рыночные данные с sparkline и priceChangePercentage", async () => {
+			const mockRawData: CryptoPriceRaw[] = [
+				{
+					id: "bitcoin",
+					symbol: "btc",
+					name: "Bitcoin",
+					image: "https://example.com/btc.png",
+					current_price: 50000,
+					market_cap: 1000000000,
+					market_cap_rank: 1,
+					total_volume: 50000000,
+					high_24h: 51000,
+					low_24h: 49000,
+					price_change_24h: 1000,
+					price_change_percentage_24h: 2,
+					price_change_percentage_1h_in_currency: 0.5,
+					price_change_percentage_7d_in_currency: 5.2,
+					market_cap_change_24h: 20000000,
+					market_cap_change_percentage_24h: 2,
+					circulating_supply: 20000000,
+					ath: 60000,
+					ath_change_percentage: -16.67,
+					ath_date: "2021-11-10",
+					atl: 1000,
+					atl_change_percentage: 4900,
+					atl_date: "2013-01-01",
+					sparkline_in_7d: {
+						price: [48000, 49000, 49500, 50000, 50500, 51000, 50000],
+					},
+					last_updated: "2024-01-01",
+				},
+			];
+
+			const expectedData: CryptoPrice[] = [
+				{
+					id: "bitcoin",
+					symbol: "btc",
+					name: "Bitcoin",
+					image: "https://example.com/btc.png",
+					currentPrice: 50000,
+					marketCap: 1000000000,
+					marketCapRank: 1,
+					totalVolume: 50000000,
+					high24h: 51000,
+					low24h: 49000,
+					priceChange24h: 1000,
+					priceChangePercentage24h: 2,
+					priceChangePercentage1hInCurrency: 0.5,
+					priceChangePercentage7dInCurrency: 5.2,
+					marketCapChange24h: 20000000,
+					marketCapChangePercentage24h: 2,
+					circulatingSupply: 20000000,
+					ath: 60000,
+					athChangePercentage: -16.67,
+					athDate: "2021-11-10",
+					atl: 1000,
+					atlChangePercentage: 4900,
+					atlDate: "2013-01-01",
+					sparklineIn7d: {
+						price: [48000, 49000, 49500, 50000, 50500, 51000, 50000],
+					},
+					lastUpdated: "2024-01-01",
+				},
+			];
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockRawData),
+			} as unknown as Response);
+
+			const result = await service.getMarketData({
+				sparkline: true,
+				priceChangePercentage: "1h,24h,7d",
+			});
+
+			expect(result).toEqual(expectedData);
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("sparkline=true");
+			expect(callUrl).toContain("price_change_percentage=1h%2C24h%2C7d");
+		});
+
+		it("должен получить рыночные данные с sparkline без priceChangePercentage", async () => {
+			const mockRawData: CryptoPriceRaw[] = [
+				{
+					id: "ethereum",
+					symbol: "eth",
+					name: "Ethereum",
+					image: "https://example.com/eth.png",
+					current_price: 3000,
+					market_cap: 500000000,
+					market_cap_rank: 2,
+					total_volume: 30000000,
+					high_24h: 3100,
+					low_24h: 2900,
+					price_change_24h: 100,
+					price_change_percentage_24h: 3.33,
+					market_cap_change_24h: 15000000,
+					market_cap_change_percentage_24h: 3,
+					circulating_supply: 120000000,
+					ath: 4000,
+					ath_change_percentage: -25,
+					ath_date: "2021-11-10",
+					atl: 100,
+					atl_change_percentage: 2900,
+					atl_date: "2015-10-20",
+					sparkline_in_7d: {
+						price: [2800, 2900, 2950, 3000, 3050, 3100, 3000],
+					},
+					last_updated: "2024-01-01",
+				},
+			];
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockRawData),
+			} as unknown as Response);
+
+			const result = await service.getMarketData({
+				sparkline: true,
+			});
+
+			expect(result[0]).toHaveProperty("sparklineIn7d");
+			expect(result[0].sparklineIn7d).toEqual({
+				price: [2800, 2900, 2950, 3000, 3050, 3100, 3000],
+			});
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("sparkline=true");
+		});
+
+		it("должен получить рыночные данные с priceChangePercentage без sparkline", async () => {
+			const mockRawData: CryptoPriceRaw[] = [
+				{
+					id: "bitcoin",
+					symbol: "btc",
+					name: "Bitcoin",
+					image: "https://example.com/btc.png",
+					current_price: 50000,
+					market_cap: 1000000000,
+					market_cap_rank: 1,
+					total_volume: 50000000,
+					high_24h: 51000,
+					low_24h: 49000,
+					price_change_24h: 1000,
+					price_change_percentage_24h: 2,
+					price_change_percentage_1h_in_currency: 0.5,
+					price_change_percentage_7d_in_currency: 5.2,
+					market_cap_change_24h: 20000000,
+					market_cap_change_percentage_24h: 2,
+					circulating_supply: 20000000,
+					ath: 60000,
+					ath_change_percentage: -16.67,
+					ath_date: "2021-11-10",
+					atl: 1000,
+					atl_change_percentage: 4900,
+					atl_date: "2013-01-01",
+					last_updated: "2024-01-01",
+				},
+			];
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockRawData),
+			} as unknown as Response);
+
+			const result = await service.getMarketData({
+				priceChangePercentage: "1h,24h,7d",
+			});
+
+			expect(result[0]).toHaveProperty("priceChangePercentage1hInCurrency", 0.5);
+			expect(result[0]).toHaveProperty("priceChangePercentage7dInCurrency", 5.2);
+			expect(result[0].sparklineIn7d).toBeUndefined();
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("sparkline=false");
+			expect(callUrl).toContain("price_change_percentage=1h%2C24h%2C7d");
+		});
+
+		it("должен обработать данные без новых полей когда они не запрошены", async () => {
+			const mockRawData: CryptoPriceRaw[] = [
+				{
+					id: "bitcoin",
+					symbol: "btc",
+					name: "Bitcoin",
+					image: "https://example.com/btc.png",
+					current_price: 50000,
+					market_cap: 1000000000,
+					market_cap_rank: 1,
+					total_volume: 50000000,
+					high_24h: 51000,
+					low_24h: 49000,
+					price_change_24h: 1000,
+					price_change_percentage_24h: 2,
+					market_cap_change_24h: 20000000,
+					market_cap_change_percentage_24h: 2,
+					circulating_supply: 20000000,
+					ath: 60000,
+					ath_change_percentage: -16.67,
+					ath_date: "2021-11-10",
+					atl: 1000,
+					atl_change_percentage: 4900,
+					atl_date: "2013-01-01",
+					last_updated: "2024-01-01",
+				},
+			];
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockRawData),
+			} as unknown as Response);
+
+			const result = await service.getMarketData();
+
+			expect(result[0].sparklineIn7d).toBeUndefined();
+			expect(result[0].priceChangePercentage1hInCurrency).toBeUndefined();
+			expect(result[0].priceChangePercentage7dInCurrency).toBeUndefined();
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("sparkline=false");
+		});
 	});
 
 	describe("getSimplePrices", () => {
