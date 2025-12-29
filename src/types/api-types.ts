@@ -246,3 +246,10 @@ export interface CryptoMarketData {
 		updatedAt: number;
 	};
 }
+
+export interface GlobalMarketCapChartResponse {
+	market_cap_chart: {
+		market_cap: [number, number][];
+		volume: [number, number][];
+	};
+}

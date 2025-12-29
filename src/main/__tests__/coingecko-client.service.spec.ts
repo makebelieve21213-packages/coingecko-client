@@ -12,6 +12,7 @@ import type {
 	CryptoSearchResult,
 	TrendingCrypto,
 	CryptoMarketData,
+	GlobalMarketCapChartResponse,
 } from "src/types/api-types";
 import type { CoinGeckoModuleOptions } from "src/types/module-options.interface";
 
@@ -1372,6 +1373,197 @@ describe("CoinGeckoService", () => {
 
 			expect(result).toEqual(mockData);
 			expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/global"), expect.any(Object));
+		});
+	});
+
+	describe("getGlobalMarketCapChart", () => {
+		beforeEach(() => {
+			service = new CoinGeckoService(mockOptions, mockLoggerService as unknown as LoggerService);
+		});
+
+		it("должен получить данные графика капитализации с дефолтной валютой", async () => {
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [
+						[1609459200000, 1000000000000],
+						[1609545600000, 1050000000000],
+					],
+					volume: [
+						[1609459200000, 50000000000],
+						[1609545600000, 55000000000],
+					],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getGlobalMarketCapChart({ days: 7 });
+
+			expect(result).toEqual(mockData);
+			expect(mockFetch).toHaveBeenCalledWith(
+				expect.stringContaining("/global/market_cap_chart"),
+				expect.any(Object)
+			);
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("days=7");
+			expect(callUrl).toContain("vs_currency=usd");
+			expect(mockLoggerService.log).toHaveBeenCalledWith(
+				expect.stringContaining("getGlobalMarketCapChart")
+			);
+		});
+
+		it("должен получить данные графика капитализации с кастомной валютой", async () => {
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [
+						[1609459200000, 850000000000],
+						[1609545600000, 900000000000],
+					],
+					volume: [
+						[1609459200000, 42500000000],
+						[1609545600000, 45000000000],
+					],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getGlobalMarketCapChart({ days: 30, vsCurrency: "eur" });
+
+			expect(result).toEqual(mockData);
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("days=30");
+			expect(callUrl).toContain("vs_currency=eur");
+			expect(mockLoggerService.log).toHaveBeenCalledWith(
+				expect.stringContaining("getGlobalMarketCapChart")
+			);
+		});
+
+		it("должен выбросить CoingeckoError при ошибке API (4xx)", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: false,
+				status: 400,
+				json: jest.fn().mockResolvedValueOnce({ error: "Bad Request" }),
+			} as unknown as Response);
+
+			await expect(service.getGlobalMarketCapChart({ days: 7 })).rejects.toThrow(CoingeckoError);
+		});
+
+		it("должен выбросить CoingeckoError при ошибке API (5xx)", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: false,
+				status: 500,
+				json: jest.fn().mockResolvedValueOnce({ error: "Internal Server Error" }),
+			} as unknown as Response);
+
+			await expect(service.getGlobalMarketCapChart({ days: 7 })).rejects.toThrow(CoingeckoError);
+		});
+
+		it("должен обработать данные с пустыми массивами", async () => {
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [],
+					volume: [],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getGlobalMarketCapChart({ days: 1 });
+
+			expect(result).toEqual(mockData);
+			expect(result.market_cap_chart.market_cap).toEqual([]);
+			expect(result.market_cap_chart.volume).toEqual([]);
+		});
+
+		it("должен использовать API ключ из конфигурации", async () => {
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [[1609459200000, 1000000000000]],
+					volume: [[1609459200000, 50000000000]],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			await service.getGlobalMarketCapChart({ days: 7 });
+
+			const callHeaders = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+			expect(callHeaders).toHaveProperty("x-cg-pro-api-key", "test-api-key");
+		});
+
+		it("должен работать без API ключа", async () => {
+			const optionsWithoutKey: CoinGeckoModuleOptions = {
+				baseUrl: "https://api.coingecko.com/api/v3",
+				timeout: 30000,
+			};
+
+			service = new CoinGeckoService(optionsWithoutKey, mockLoggerService as unknown as LoggerService);
+
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [[1609459200000, 1000000000000]],
+					volume: [[1609459200000, 50000000000]],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			await service.getGlobalMarketCapChart({ days: 7 });
+
+			const callHeaders = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+			expect(callHeaders).not.toHaveProperty("x-cg-pro-api-key");
+		});
+
+		it("должен обработать данные с различными периодами", async () => {
+			const mockData: GlobalMarketCapChartResponse = {
+				market_cap_chart: {
+					market_cap: [
+						[1609459200000, 1000000000000],
+						[1609545600000, 1050000000000],
+						[1609632000000, 1100000000000],
+					],
+					volume: [
+						[1609459200000, 50000000000],
+						[1609545600000, 55000000000],
+						[1609632000000, 60000000000],
+					],
+				},
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getGlobalMarketCapChart({ days: 365 });
+
+			expect(result).toEqual(mockData);
+			expect(result.market_cap_chart.market_cap).toHaveLength(3);
+			expect(result.market_cap_chart.volume).toHaveLength(3);
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("days=365");
 		});
 	});
 });

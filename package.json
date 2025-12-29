@@ -1,6 +1,6 @@
 {
   "name": "@makebelieve21213-packages/coingecko-client",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CoinGecko API client for NestJS with TypeScript support",
   "type": "module",
   "main": "./dist/index.js",

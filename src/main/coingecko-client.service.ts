@@ -14,6 +14,7 @@ import type {
 	CryptoSearchResult,
 	TrendingCrypto,
 	CryptoMarketData,
+	GlobalMarketCapChartResponse,
 } from "src/types/api-types";
 import type { CoinGeckoModuleOptions } from "src/types/module-options.interface";
 
@@ -105,5 +106,20 @@ export default class CoinGeckoService extends CoreClientService {
 	// Получает глобальные метрики криптовалютного рынка включая общую капитализацию и объем
 	getGlobalMarketData(): Promise<CryptoMarketData> {
 		return this.makeRequest<CryptoMarketData>("/global");
+	}
+
+	// Получает исторические данные общей рыночной капитализации криптовалютного рынка
+	getGlobalMarketCapChart(params: {
+		days: number;
+		vsCurrency?: string;
+	}): Promise<GlobalMarketCapChartResponse> {
+		this.logger.log(
+			`getGlobalMarketCapChart [days: ${params.days}, vsCurrency: ${params.vsCurrency || "usd"}]`
+		);
+
+		return this.makeRequest<GlobalMarketCapChartResponse>("/global/market_cap_chart", {
+			days: params.days,
+			vs_currency: params.vsCurrency || "usd",
+		});
 	}
 }
