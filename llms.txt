@@ -47,6 +47,7 @@ NestJS глобальный модуль для регистрации CoinGecko
 - Конструктор принимает `CoinGeckoModuleOptions` через DI
 - `getMarketData(params)` - получение рыночных данных криптовалют с фильтрацией и сортировкой. Поддерживает параметры `sparkline` (данные sparkline за 7 дней) и `priceChangePercentage` (периоды изменения цен, например "1h,24h,7d")
 - `getSimplePrices(ids, include24hChange)` - получение простых цен криптовалют по их ID
+- `getPriceBySymbol(symbol, options?)` - получение цены криптовалюты по символу (btc, eth, usdt и т.д.). Опции: `vsCurrency?`, `include24hChange?`. Возвращает `PriceBySymbolResult | null`
 - `getCoinDetails(coinId)` - получение детальной информации о криптовалюте включая метрики, профиль и данные разработчиков
 - `getHistoricalData(coinId, days, interval)` - получение исторических данных о ценах, рыночной капитализации и объеме
 - `searchCoins(query)` - выполнение поиска криптовалют по запросу
@@ -67,6 +68,7 @@ NestJS глобальный модуль для регистрации CoinGecko
 - `CryptoPriceRaw` - сырые данные от API (snake_case). Включает поля: `sparkline_in_7d?: { price: number[] }`, `price_change_percentage_1h_in_currency?: number`, `price_change_percentage_7d_in_currency?: number`
 - `MarketDataParams` - параметры для запроса рыночных данных. Включает опциональные параметры: `sparkline?: boolean`, `priceChangePercentage?: string`
 - `PriceData` - простые цены криптовалют
+- `PriceBySymbolResult` - результат получения цены по символу: `coinId`, `symbol`, `price`, `vsCurrency`, `priceChange24h?`
 - `CryptoDetails` - детальная информация о криптовалюте
 - `CryptoHistoricalData` - исторические данные о ценах и объемах
 - `CryptoSearchResult` - результат поиска криптовалют
@@ -133,7 +135,7 @@ export class AppModule {}
 // crypto-data.service.ts
 import { Injectable } from '@nestjs/common';
 import { CoinGeckoService } from '@packages/coingecko-client';
-import type { CryptoPrice, CryptoDetails, CryptoHistoricalData, CryptoSearchResult, TrendingCrypto, CryptoMarketData } from '@packages/coingecko-client';
+import type { CryptoPrice, PriceBySymbolResult, CryptoDetails, CryptoHistoricalData, CryptoSearchResult, TrendingCrypto, CryptoMarketData } from '@packages/coingecko-client';
 
 @Injectable()
 export class CryptoDataService {
@@ -145,6 +147,10 @@ export class CryptoDataService {
 
   async getCryptoPrices(coinIds: string[], include24hChange: boolean = false) {
     return await this.coingecko.getSimplePrices(coinIds, include24hChange);
+  }
+
+  async getPriceBySymbol(symbol: string): Promise<PriceBySymbolResult | null> {
+    return await this.coingecko.getPriceBySymbol(symbol);
   }
 
   async getCryptoDetails(coinId: string): Promise<CryptoDetails> {
@@ -187,7 +193,7 @@ export class CryptoDataService {
 
 Типы:
 - `CoinGeckoModuleOptions` / `CoinGeckoModuleAsyncOptions`
-- `CryptoPrice`, `CryptoPriceRaw`, `MarketDataParams`, `PriceData`
+- `CryptoPrice`, `CryptoPriceRaw`, `MarketDataParams`, `PriceData`, `PriceBySymbolResult`
 - `CryptoDetails`, `CryptoHistoricalData`, `CryptoSearchResult`
 - `TrendingCrypto`, `CryptoMarketData`
 

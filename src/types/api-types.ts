@@ -77,6 +77,14 @@ export interface PriceData {
 	[id: string]: Record<string, number>;
 }
 
+export interface PriceBySymbolResult {
+	coinId: string;
+	symbol: string;
+	price: number;
+	vsCurrency: string;
+	priceChange24h?: number;
+}
+
 export interface CryptoDetails {
 	id: string;
 	symbol: string;

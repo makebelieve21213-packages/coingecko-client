@@ -1083,6 +1083,131 @@ describe("CoinGeckoService", () => {
 		});
 	});
 
+	describe("getPriceBySymbol", () => {
+		beforeEach(() => {
+			service = new CoinGeckoService(mockOptions, mockLoggerService as unknown as LoggerService);
+		});
+
+		it("должен получить цену по символу в USD", async () => {
+			const mockData: PriceData = {
+				bitcoin: { usd: 67187.33 },
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("btc");
+
+			expect(result).toEqual({
+				coinId: "bitcoin",
+				symbol: "btc",
+				price: 67187.33,
+				vsCurrency: "usd",
+			});
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("symbols=btc");
+			expect(callUrl).toContain("vs_currencies=usd");
+		});
+
+		it("должен нормализовать символ в нижний регистр", async () => {
+			const mockData: PriceData = {
+				ethereum: { usd: 3500 },
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("ETH");
+
+			expect(result?.symbol).toBe("eth");
+			expect(result?.price).toBe(3500);
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("symbols=eth");
+		});
+
+		it("должен вернуть null если монета не найдена", async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce({}),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("unknownxyz");
+
+			expect(result).toBeNull();
+		});
+
+		it("должен вернуть null если цена в запрошенной валюте отсутствует", async () => {
+			// API вернул монету, но без цены в запрошенной валюте (например, неподдерживаемая валюта)
+			const mockData: PriceData = {
+				bitcoin: { usd: 50000 },
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("btc", { vsCurrency: "xyz" });
+
+			expect(result).toBeNull();
+		});
+
+		it("должен поддержать кастомную валюту", async () => {
+			const mockData: PriceData = {
+				bitcoin: { eur: 62000 },
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("btc", { vsCurrency: "eur" });
+
+			expect(result).toEqual({
+				coinId: "bitcoin",
+				symbol: "btc",
+				price: 62000,
+				vsCurrency: "eur",
+			});
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("vs_currencies=eur");
+		});
+
+		it("должен включить изменение за 24 часа при запросе", async () => {
+			const mockData: PriceData = {
+				bitcoin: { usd: 50000, usd_24h_change: 3.5 },
+			};
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: jest.fn().mockResolvedValueOnce(mockData),
+			} as unknown as Response);
+
+			const result = await service.getPriceBySymbol("btc", { include24hChange: true });
+
+			expect(result).toEqual({
+				coinId: "bitcoin",
+				symbol: "btc",
+				price: 50000,
+				vsCurrency: "usd",
+				priceChange24h: 3.5,
+			});
+			const callUrl = mockFetch.mock.calls[0][0] as string;
+			expect(callUrl).toContain("include_24hr_change=true");
+		});
+	});
+
 	describe("getCoinDetails", () => {
 		beforeEach(() => {
 			service = new CoinGeckoService(mockOptions, mockLoggerService as unknown as LoggerService);

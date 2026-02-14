@@ -1,4 +1,4 @@
-# @packages/coingecko-client
+# @makebelieve21213-packages/coingecko-client
 
 CoinGecko API клиент для NestJS с поддержкой TypeScript и полной типобезопасностью.
 
@@ -32,7 +32,7 @@ CoinGecko API клиент для NestJS с поддержкой TypeScript и �
 ## 📦 Установка
 
 ```bash
-npm install @packages/coingecko-client
+npm install @makebelieve21213-packages/coingecko-client
 ```
 
 ### Зависимости
@@ -66,7 +66,7 @@ src/
 - `CoinGeckoModule` - NestJS глобальный модуль
 - `CoinGeckoService` - сервис для работы с API
 - `CoinGeckoModuleOptions` - конфигурация клиента
-- Типы: `CryptoPrice`, `CryptoDetails`, `CryptoHistoricalData`, `CryptoSearchResult`, `TrendingCrypto`, `CryptoMarketData`
+- Типы: `CryptoPrice`, `PriceBySymbolResult`, `CryptoDetails`, `CryptoHistoricalData`, `CryptoSearchResult`, `TrendingCrypto`, `CryptoMarketData`
 
 ## 🔧 Быстрый старт
 
@@ -84,7 +84,7 @@ COINGECKO_TIMEOUT=30000  # Опционально
 
 ```typescript
 import { registerAs } from "@nestjs/config";
-import type { CoinGeckoModuleOptions } from "@packages/coingecko-client";
+import type { CoinGeckoModuleOptions } from "@makebelieve21213-packages/coingecko-client";
 import { EnvVariable } from "src/types/enums";
 
 export type CoinGeckoConfiguration = CoinGeckoModuleOptions;
@@ -107,7 +107,7 @@ export default coingeckoConfig;
 // app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CoinGeckoModule } from '@packages/coingecko-client';
+import { CoinGeckoModule } from '@makebelieve21213-packages/coingecko-client';
 import coingeckoConfig from 'src/configs/coingecko.config';
 import type { CoinGeckoConfiguration } from 'src/configs/coingecko.config';
 
@@ -132,8 +132,8 @@ export class AppModule {}
 ```typescript
 // crypto-data.service.ts
 import { Injectable } from '@nestjs/common';
-import { CoinGeckoService } from '@packages/coingecko-client';
-import type { CryptoPrice } from '@packages/coingecko-client';
+import { CoinGeckoService } from '@makebelieve21213-packages/coingecko-client';
+import type { CryptoPrice } from '@makebelieve21213-packages/coingecko-client';
 
 @Injectable()
 export class CryptoDataService {
@@ -195,6 +195,24 @@ async getMarketData(params?: MarketDataParams): Promise<CryptoPrice[]>
 ```typescript
 getSimplePrices(ids: string[], include24hChange?: boolean): Promise<PriceData>
 ```
+
+#### `getPriceBySymbol(symbol, options?)`
+
+Получает цену криптовалюты по её символу (например, btc, eth, usdt).
+
+```typescript
+async getPriceBySymbol(
+  symbol: string,
+  options?: { vsCurrency?: string; include24hChange?: boolean }
+): Promise<PriceBySymbolResult | null>
+```
+
+**Параметры:**
+- `symbol` - символ криптовалюты (btc, eth, usdt и т.д.)
+- `vsCurrency?: string` - валюта для отображения цены (по умолчанию: "usd")
+- `include24hChange?: boolean` - включить процентное изменение за 24 часа
+
+**Возвращает:** `PriceBySymbolResult` с полями `coinId`, `symbol`, `price`, `vsCurrency`, `priceChange24h?` или `null` если монета не найдена.
 
 #### `getCoinDetails(coinId)`
 
@@ -276,6 +294,26 @@ assets.forEach(asset => {
 const prices = await this.coingecko.getSimplePrices(['bitcoin', 'ethereum'], true);
 console.log(`BTC: $${prices.bitcoin.usd}`);
 console.log(`ETH: $${prices.ethereum.usd}`);
+```
+
+### Получение цены по символу
+
+```typescript
+const btcPrice = await this.coingecko.getPriceBySymbol('btc');
+if (btcPrice) {
+  console.log(`BTC: $${btcPrice.price}`);
+  console.log(`Coin ID: ${btcPrice.coinId}`);
+}
+
+// С кастомной валютой и изменением за 24 часа
+const ethPrice = await this.coingecko.getPriceBySymbol('eth', {
+  vsCurrency: 'eur',
+  include24hChange: true,
+});
+if (ethPrice) {
+  console.log(`ETH: €${ethPrice.price}`);
+  console.log(`24h Change: ${ethPrice.priceChange24h}%`);
+}
 ```
 
 ### Получение детальной информации

@@ -5,6 +5,22 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.0.3] - 2025-02-14
+
+### Добавлено
+- Новый метод `getPriceBySymbol()` для получения цены криптовалюты по её символу (например, btc, eth, usdt)
+- Новый тип `PriceBySymbolResult` с полями: `coinId`, `symbol`, `price`, `vsCurrency`, `priceChange24h?`
+- Поддержка параметров:
+  - `vsCurrency` - валюта для отображения цены, по умолчанию "usd" (опциональный)
+  - `include24hChange` - включить процентное изменение цены за 24 часа (опциональный)
+- Метод возвращает `null` если монета с указанным символом не найдена
+- Метод нормализует символ в нижний регистр (ETH → eth)
+- Полное покрытие тестами нового метода (5 тестов)
+
+### Обновлено
+- README.md и llms.txt — добавлена документация по `getPriceBySymbol()`, обновлено имя пакета на `@makebelieve21213-packages/coingecko-client`
+- .prettierignore и команды format/format:fix — включено форматирование конфигов (package.json, tsconfig.json, jest.config.ts, .prettierrc)
+
 ## [1.0.2] - 2025-12-29
 
 ### Добавлено

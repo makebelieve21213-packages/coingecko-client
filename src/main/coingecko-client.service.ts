@@ -9,6 +9,7 @@ import type {
 	CryptoPrice,
 	CryptoPriceRaw,
 	PriceData,
+	PriceBySymbolResult,
 	CryptoDetails,
 	CryptoHistoricalData,
 	CryptoSearchResult,
@@ -60,6 +61,44 @@ export default class CoinGeckoService extends CoreClientService {
 			vs_currencies: "usd",
 			include_24hr_change: include24hChange,
 		});
+	}
+
+	// Получает цену криптовалюты по её символу (например, btc, eth, usdt)
+	async getPriceBySymbol(
+		symbol: string,
+		options?: { vsCurrency?: string; include24hChange?: boolean }
+	): Promise<PriceBySymbolResult | null> {
+		const vsCurrency = (options?.vsCurrency || "usd").toLowerCase();
+		const normalizedSymbol = symbol.toLowerCase().trim();
+
+		const rawResponse = await this.makeRequest<PriceData>("/simple/price", {
+			symbols: normalizedSymbol,
+			vs_currencies: vsCurrency,
+			include_24hr_change: options?.include24hChange ?? false,
+		});
+
+		const entries = Object.entries(rawResponse);
+		if (!entries.length) {
+			return null;
+		}
+
+		// При запросе по символу API возвращает монету по капитализации
+		const [coinId, priceData] = entries[0];
+		const price = priceData[vsCurrency];
+
+		if (price === undefined) {
+			return null;
+		}
+
+		const priceChange24h = priceData[`${vsCurrency}_24h_change`];
+
+		return {
+			coinId,
+			symbol: normalizedSymbol,
+			price: Number(price),
+			vsCurrency,
+			...(priceChange24h !== undefined && { priceChange24h: Number(priceChange24h) }),
+		};
 	}
 
 	// Получает детальную информацию о криптовалюте включая метрики, профиль и данные разработчиков
